@@ -117,7 +117,7 @@ st.markdown(
 st.sidebar.header("Cosmological Parameters 🖩")
 H0 = st.number_input("Hubble Constant (H₀)", value=69.6)
 WM = st.slider("Ω Matter (Ωₘ)", 0.001, 1.500, 0.286, format="%.3f")
-WV = st.slider("Ω Vacuum / Lambda (Ω_Λ)", 0.001, 1.500, 0.714, format="%.3f
+WV = st.slider("Ω Vacuum / Lambda (Ω_Λ)", 0.001, 1.500, 0.714, format="%.3f")
 
 uploaded_file = st.file_uploader("Upload your data file", type=["csv", "tsv", "txt"])
 if uploaded_file:
