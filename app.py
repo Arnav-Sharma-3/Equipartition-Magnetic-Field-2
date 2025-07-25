@@ -1,31 +1,30 @@
 import streamlit as st
 import pandas as pd
 import math
-from math import *
+from math import sqrt, exp, sin, log10
 
 # --------------------------------------------------
-# Constants
+# Constants for CGS conversions and synchrotron math
 # --------------------------------------------------
-CGS_KPC  = 3.08567758128e21    # cm per kiloparsec
-CGS_MPC  = 3.08567758128e24    # cm per Megaparsec
-C1       = 6.266e18
-C3       = 2.368e-3
-M_E      = 9.1093837139e-28
-C_LIGHT  = 2.99792458e10
-X_FACTOR = 0.0
+CGS_KPC = 3.08567758128e21    # cm per kiloparsec
+CGS_MPC = 3.08567758128e24    # cm per Megaparsec
+C1 = 6.266e18                 # synchrotron constant
+C3 = 2.368e-3                 # synchrotron constant
+M_E = 9.1093837139e-28        # electron mass (g)
+C_LIGHT = 2.99792458e10       # speed of light (cm/s)
+X_FACTOR = 0.0                # proton/electron energy ratio
 
-# --------------------------------------------------
-# Cosmology Calculator (from redshift)
-# --------------------------------------------------
 def run_cosmology_calculator(z, H0, WM, WV):
-    h = H0 / 100.
+    """Calculate cosmological distances from redshift"""
+    h = H0 / 100
     WR = 4.165E-5 / (h * h)
     WK = 1 - WM - WR - WV
     az = 1.0 / (1.0 + z)
     Tyr = 977.8
     c = 299792.458
 
-    n = 1000
+    n = 1000  # Integration steps
+    # Age at redshift z calculation
     age = 0.0
     for i in range(n):
         a = az * (i + 0.5) / n
@@ -33,6 +32,7 @@ def run_cosmology_calculator(z, H0, WM, WV):
         age += 1.0 / adot
     zage = az * age / n
 
+    # Distance calculations
     DTT = 0.0
     DCMR = 0.0
     for i in range(n):
@@ -40,43 +40,49 @@ def run_cosmology_calculator(z, H0, WM, WV):
         adot = sqrt(WK + (WM / a) + (WR / (a * a)) + (WV * a * a))
         DTT += 1.0 / adot
         DCMR += 1.0 / (a * adot)
-
+    
     DTT = (1.0 - az) * DTT / n
     DCMR = (1.0 - az) * DCMR / n
-
+    
+    # Angular diameter distance
     x = sqrt(abs(WK)) * DCMR
     if x > 0.1:
-        if WK > 0:
-            ratio = 0.5 * (exp(x) - exp(-x)) / x
-        else:
-            ratio = sin(x) / x
+        ratio = (0.5 * (exp(x) - exp(-x)) / x) if WK > 0 else (sin(x) / x)
     else:
         y = x * x
-        if WK < 0:
-            y = -y
         ratio = 1. + y / 6. + y * y / 120.
-
+    
     DCMT = ratio * DCMR
     DA = az * DCMT
-    DL = DA / (az * az)
-
     DA_Mpc = (c / H0) * DA
+    DL = DA / (az * az)  # Luminosity distance
     DL_Mpc = (c / H0) * DL
-
-    return DL_Mpc, DA_Mpc, az  # Luminosity Distance, Angular Diameter, Scale Factor
-
-# --------------------------------------------------
-# Magnetic Field Calculator
-# --------------------------------------------------
-def compute_fields(alpha, g1, g2, v0, s_v0, l, b, w, DL_Mpc, az):
-    Sf=az
+    kpc_DA = DA_Mpc / 206.264806  # Scale factor (kpc/arcsec)
+    
+    return {
+        'DL_Mpc': DL_Mpc,       # Luminosity distance (Mpc)
+        'DA_Mpc': DA_Mpc,       # Angular diameter distance (Mpc)
+        'kpc_DA': kpc_DA        # Scale factor (kpc/arcsec)
+    }
+def compute_fields(alpha, g1, g2, v0, s_v0, l, b, w, z, H0=69.6, WM=0.286, WV=0.714):
+    """Calculate magnetic fields using redshift instead of direct distances"""
+    # Get cosmology-derived values
+    cosmo = run_cosmology_calculator(z, H0, WM, WV)
+    D_l = cosmo['DL_Mpc']       # Luminosity distance in Mpc
+    D_a = cosmo['DA_Mpc']       # Angular diameter distance in Mpc
+    Sf = cosmo['kpc_DA']        # Scale factor (kpc/arcsec)
+    
+    # Convert kpc → cm, Mpc → cm
     l_cm = l * Sf * CGS_KPC
     b_cm = b * Sf * CGS_KPC
     w_cm = w * Sf * CGS_KPC
-    D_l_cm = DL_Mpc * CGS_MPC
+    D_l_cm = D_l * CGS_MPC
+
+    # Convert MHz → Hz, Jy → erg/s/cm²/Hz
     v0_hz = v0 * 1e6
     s_v0_cgs = s_v0 * 1e-23
-    
+
+    # Synchrotron calculations
     p = 2 * alpha + 1
     V = (4 / 3) * math.pi * l_cm * b_cm * w_cm * 0.125
     L1 = 4 * math.pi * D_l_cm**2 * s_v0_cgs * v0_hz**alpha
@@ -98,27 +104,27 @@ def compute_fields(alpha, g1, g2, v0, s_v0, l, b, w, DL_Mpc, az):
     u_p = A / V * B_min**(-1 + alpha)
     u_tot = u_p + u_b
 
-    return alpha, B_min * 1e6, B_eq * 1e6, D_l_cm, L, u_p, u_b, u_tot
+    return alpha, B_min * 1e6, B_eq * 1e6, D_l_cm, L, u_p, u_b, u_tot, D_l, D_a, Sf
+# -----------------------
+# Streamlit App Layout
+# -----------------------
+st.set_page_config(page_title="Galaxy Magnetic Field Calculator", layout="centered")
+st.title("🌀 Lobe Magnetic Field Estimator (Cosmology-Integrated)")
 
-# --------------------------------------------------
-# Streamlit App
-# --------------------------------------------------
-st.set_page_config(page_title="CosmoMagnetic Field Calculator", layout="wide")
-st.title("🌀 Magnetic Field Calculator with Redshift-based Cosmology")
+# Cosmology parameters in sidebar
+with st.sidebar:
+    st.header("Cosmology Parameters")
+    H0 = st.number_input("Hubble Constant (H₀)", value=69.6)
+    WM = st.slider("Ω Matter (Ωₘ)", 0.001, 1.500, 0.286, format="%.3f")
+    WV = st.slider("Ω Vacuum (Ω_Λ)", 0.001, 1.500, 0.714, format="%.3f")
 
 st.markdown(
     """
-    Upload a CSV with columns:  
-    `Source, z, alpha, gamma1, gamma2, v0, s_v0, l, b, w`  
+    Upload a CSV/TSV with columns:  
+    `Source, alpha, gamma1, gamma2, v0, s_v0, l, b, w, z`  
     — where **l, b, w** are in **kpc**, **z** is redshift, **v0** in **MHz**, **s_v0** in **Jy**.
     """
 )
-
-# Cosmology settings
-st.sidebar.header("Cosmological Parameters")
-H0 = st.sidebar.number_input("Hubble Constant (H₀)", value=69.6)
-WM = st.sidebar.slider("Ω Matter (Ωₘ)", 0.001, 1.500, 0.286, format="%.3f")
-WV = st.sidebar.slider("Ω Vacuum / Lambda (Ω_Λ)", 0.001, 1.500, 0.714, format="%.3f")
 
 uploaded_file = st.file_uploader("Upload your data file", type=["csv", "tsv", "txt"])
 if uploaded_file:
@@ -126,61 +132,63 @@ if uploaded_file:
     try:
         df = pd.read_csv(uploaded_file, sep=sep, comment="#")
     except Exception as e:
-        st.error(f"❌ Could not read file: {e}")
+        st.error(f"📂 Could not read file: {e}")
     else:
-        required = ["Source", "z", "alpha", "gamma1", "gamma2", "v0", "s_v0", "l", "b", "w"]
+        required = ["Source","alpha","gamma1","gamma2","v0","s_v0","l","b","w","z"]
         missing = [c for c in required if c not in df.columns]
         if missing:
             st.error(f"❌ Missing columns: {', '.join(missing)}")
         else:
-            # Compute cosmology-based values and magnetic fields
-            results = []
-
-            # Clean and ensure numeric types for all inputs
-            for col in ["z", "alpha", "gamma1", "gamma2", "v0", "s_v0", "l", "b", "w"]:
-                df[col] = pd.to_numeric(df[col], errors="coerce")
+            # Data cleaning
+            numeric_cols = ["alpha", "gamma1", "gamma2", "v0", "s_v0", "l", "b", "w", "z"]
+            df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
             
-            # Drop rows with any NaNs in required computation columns
-            df.dropna(subset=["z", "alpha", "gamma1", "gamma2", "v0", "s_v0", "l", "b", "w"], inplace=True)
-
-            for _, row in df.iterrows():
-                DL, DA, Sf = run_cosmology_calculator(row["z"], H0, WM, WV)
-                output = compute_fields(
-                    row["alpha"], row["gamma1"], row["gamma2"],
-                    row["v0"], row["s_v0"],
-                    row["l"], row["b"], row["w"],
-                    DL, Sf
+            if df[numeric_cols].isna().any().any():
+                invalid_rows = df[df[numeric_cols].isna().any(axis=1)]
+                st.warning(f"⚠️ {len(invalid_rows)} rows contain invalid numeric values and will be skipped")
+                st.dataframe(invalid_rows)
+                df = df.dropna(subset=numeric_cols)
+            
+            if df.empty:
+                st.error("❌ No valid data remaining after cleaning. Please check your input file.")
+            else:
+                results = df.apply(
+                    lambda r: compute_fields(
+                        r["alpha"], r["gamma1"], r["gamma2"],
+                        r["v0"], r["s_v0"],
+                        r["l"], r["b"], r["w"],
+                        r["z"], H0, WM, WV
+                    ), axis=1, result_type="expand"
                 )
-                results.append({
-                    "Source": row["Source"],
-                    "z": row["z"],
-                    "Alpha": output[0],
-                    "B_min (μG)": output[1],
-                    "B_eq (μG)": output[2],
-                    "D_L (Mpc)": f"{output[3]:.2f}",
-                    "L (erg/s)": f"{output[4]:.2e}",
-                    "u_p (erg/cm³)": f"{output[5]:.2e}",
-                    "u_B (erg/cm³)": f"{output[6]:.2e}",
-                    "u_total (erg/cm³)": f"{output[7]:.2e}",
-                    "D_A (Mpc)": f"{DA:.2f}",
-                    "Scale Factor (a)": f"{Sf:.4f}"
+                
+                df_out = pd.DataFrame({
+                    "Source": df["Source"],
+                    "Alpha": results[0],
+                    "B_min (μG)": results[1].round(3),
+                    "B_eq (μG)": results[2].round(3),
+                    "D_L (Mpc)": results[8].round(3),
+                    "D_A (Mpc)": results[9].round(3),
+                    "Scale (kpc/\")": results[10].round(3),
+                    "L (erg/s)": results[4].apply(lambda x: f"{x:.2e}"),
+                    "u_p (erg/cm³)": results[5].apply(lambda x: f"{x:.2e}"),
+                    "u_B (erg/cm³)": results[6].apply(lambda x: f"{x:.2e}"),
+                    "u_total (erg/cm³)": results[7].apply(lambda x: f"{x:.2e}")
                 })
 
-            df_out = pd.DataFrame(results)
-            st.success("✅ Calculation complete!")
-            st.dataframe(df_out)
+                st.success("✅ Calculation complete!")
+                st.dataframe(df_out)
 
-            csv_data = df_out.to_csv(index=False).encode("utf-8")
-            st.download_button(
-                label="📥 Download Results as CSV",
-                data=csv_data,
-                file_name="magnetic_field_with_cosmology.csv",
-                mime="text/csv"
-            )
+                csv_data = df_out.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    label="📅 Download Results (CSV)",
+                    data=csv_data,
+                    file_name="magnetic_fields_results.csv",
+                    mime="text/csv"
+                )
 
 st.markdown(
     """
-    <hr style="margin-top: 3rem;">
+    <hr style="margin-top: 3rem; margin-bottom: 1rem;">
     <div style='text-align: center; font-size: 0.9rem; color: gray;'>
         Created by <b>Arnav Sharma</b><br>
         Under the Guidance of <b>Dr. Chiranjib Konar</b>
