@@ -21,28 +21,28 @@ def run_cosmology_calculator(z, H0, WM, WV):
     h = H0 / 100.
     WR = 4.165E-5 / (h * h)
     WK = 1 - WM - WR - WV
-    az = 1.0 / (1.0 + z)
+    Sf = 1.0 / (1.0 + z)
     Tyr = 977.8
     c = 299792.458
 
     n = 1000
     age = 0.0
     for i in range(n):
-        a = az * (i + 0.5) / n
+        a = Sf * (i + 0.5) / n
         adot = sqrt(WK + (WM / a) + (WR / (a * a)) + (WV * a * a))
         age += 1.0 / adot
-    zage = az * age / n
+    zage = Sf * age / n
 
     DTT = 0.0
     DCMR = 0.0
     for i in range(n):
-        a = az + (1 - az) * (i + 0.5) / n
+        a = Sf + (1 - Sf) * (i + 0.5) / n
         adot = sqrt(WK + (WM / a) + (WR / (a * a)) + (WV * a * a))
         DTT += 1.0 / adot
         DCMR += 1.0 / (a * adot)
 
-    DTT = (1.0 - az) * DTT / n
-    DCMR = (1.0 - az) * DCMR / n
+    DTT = (1.0 - Sf) * DTT / n
+    DCMR = (1.0 - Sf) * DCMR / n
 
     x = sqrt(abs(WK)) * DCMR
     if x > 0.1:
@@ -57,13 +57,13 @@ def run_cosmology_calculator(z, H0, WM, WV):
         ratio = 1. + y / 6. + y * y / 120.
 
     DCMT = ratio * DCMR
-    DA = az * DCMT
-    DL = DA / (az * az)
+    DA = Sf * DCMT
+    DL = DA / (Sf * Sf)
 
     DA_Mpc = (c / H0) * DA
     DL_Mpc = (c / H0) * DL
 
-    return DL_Mpc, DA_Mpc, az  # Luminosity Distance, Angular Diameter, Scale Factor
+    return DL_Mpc, DA_Mpc, Sf  # Luminosity Distance, Angular Diameter, Scale Factor
 
 # --------------------------------------------------
 # Magnetic Field Calculator
