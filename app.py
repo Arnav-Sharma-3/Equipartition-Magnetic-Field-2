@@ -110,7 +110,7 @@ def compute_fields(alpha, g1, g2, v0, s_v0, l, b, w, z, H0=69.6, WM=0.286, WV=0.
 st.set_page_config(
     page_title="Lobe Magnetic Field Estimator v2 ",
     page_icon="🌌",  
-    layout="centered" 
+    layout="wide" 
 )
 st.title("🌀 Lobe Magnetic Field Estimator v2 (Cosmology Calculator Integrated)")
 
