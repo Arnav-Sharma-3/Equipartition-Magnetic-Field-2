@@ -167,7 +167,7 @@ if uploaded_file:
                 df_out = pd.DataFrame({
                     "Source": df["Source"],
                     "Redshift (z)": results[11].round(3),
-                    "Alpha": results[0],
+                    "Spectral Index (α)": results[0],
                     "B_min (μG)": results[1].round(3),
                     "B_eq (μG)": results[2].round(3),
                     "D_L (Mpc)": results[8].round(3),
