@@ -5,7 +5,8 @@ from math import sqrt, exp, sin, log10
 st.set_page_config(
     page_title="Lobe Magnetic Field Estimator v2 ",
     page_icon="🌌",  # Or use any emoji/icon URL you like
-    layout="centered"  # Optional: "wide" or "centered"
+    layout="centered" # Optional: "wide" or "centered"
+)
 # --------------------------------------------------
 # Constants for CGS conversions and synchrotron math
 # --------------------------------------------------
