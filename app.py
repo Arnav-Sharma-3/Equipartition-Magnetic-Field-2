@@ -2,7 +2,10 @@ import streamlit as st
 import pandas as pd
 import math
 from math import sqrt, exp, sin, log10
-
+st.set_page_config(
+    page_title="Lobe Magnetic Field Estimator v2 ",
+    page_icon="🌌",  # Or use any emoji/icon URL you like
+    layout="centered"  # Optional: "wide" or "centered"
 # --------------------------------------------------
 # Constants for CGS conversions and synchrotron math
 # --------------------------------------------------
@@ -104,12 +107,12 @@ def compute_fields(alpha, g1, g2, v0, s_v0, l, b, w, z, H0=69.6, WM=0.286, WV=0.
     u_p = A / V * B_min**(-1 + alpha)
     u_tot = u_p + u_b
 
-    return alpha, B_min * 1e6, B_eq * 1e6, D_l_cm, L, u_p, u_b, u_tot, D_l, D_a, Sf
+    return alpha, B_min * 1e6, B_eq * 1e6, D_l_cm, L, u_p, u_b, u_tot, D_l, D_a, Sf, z
 # -----------------------
 # Streamlit App Layout
 # -----------------------
 st.set_page_config(page_title="Galaxy Magnetic Field Calculator", layout="centered")
-st.title("🌀 Lobe Magnetic Field Estimator v2 (Integrated Cosmology Calculator)")
+st.title("🌀 Lobe Magnetic Field Estimator v2 (Cosmology-Integrated)")
 
 # Cosmology parameters in sidebar
 with st.sidebar:
@@ -163,6 +166,7 @@ if uploaded_file:
                 
                 df_out = pd.DataFrame({
                     "Source": df["Source"],
+                    "Redshift (z)": results[11].round(3),
                     "Alpha": results[0],
                     "B_min (μG)": results[1].round(3),
                     "B_eq (μG)": results[2].round(3),
