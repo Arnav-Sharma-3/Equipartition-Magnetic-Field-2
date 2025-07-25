@@ -134,6 +134,14 @@ if uploaded_file:
         else:
             # Compute cosmology-based values and magnetic fields
             results = []
+
+            # Clean and ensure numeric types for all inputs
+            for col in ["z", "alpha", "gamma1", "gamma2", "v0", "s_v0", "l", "b", "w"]:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
+            
+            # Drop rows with any NaNs in required computation columns
+            df.dropna(subset=["z", "alpha", "gamma1", "gamma2", "v0", "s_v0", "l", "b", "w"], inplace=True)
+
             for _, row in df.iterrows():
                 DL, DA, Sf = run_cosmology_calculator(row["z"], H0, WM, WV)
                 output = compute_fields(
