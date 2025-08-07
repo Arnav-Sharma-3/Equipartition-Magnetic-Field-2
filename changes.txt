@@ -1,0 +1,13 @@
+7/8/2025 changes to be made
+
+1) Slider to number input foe omega_matter and omega_vac
+2) Decimal upto 5 to digits for omega_matter and omega_vac
+3) observed frequency nu_o and s_nu_o
+4) input for l,b,w is in arcsecond on webpage instructions
+5) output of length, breadth, depth and volume of lobe in kpc, kpc, kpc and kpc^3.
+6) toggle for single source mode and batch source mode
+7) to input the total length of the radio galaxies in arcsecond for both lobes seperately
+8) to get the output of the total length of source in kpc 
+9)* velocity of hotspot
+
+Topic for NTCC Seminar 2: (Future work) to convert magnetic fields and ages from one cosmology to other cosmology
