@@ -72,18 +72,23 @@ def compute_fields(alpha, g1, g2, v0, s_v0, l, b, w, z, H0=69.6, WM=0.286, WV=0.
     Sf = cosmo['kpc_DA']        # Scale factor (kpc/arcsec)
     
     # Convert kpc → cm, Mpc → cm
-    l_cm = l * Sf * CGS_KPC
-    b_cm = b * Sf * CGS_KPC
-    w_cm = w * Sf * CGS_KPC
+    l_cm = (l/2) * Sf * CGS_KPC
+    b_cm = (b/2) * Sf * CGS_KPC
+    w_cm = (w/2) * Sf * CGS_KPC
     D_l_cm = D_l * CGS_MPC
 
     # Convert MHz → Hz, Jy → erg/s/cm²/Hz
     v0_hz = v0 * 1e6
     s_v0_cgs = s_v0 * 1e-23
+    #Dimensions and volume for output display
+    l_KPC = (l/2) * Sf
+    b_KPC = (b/2) * Sf 
+    w_KPC = (w/2) * Sf 
+    V = (4 / 3) * math.pi * l_KPC * b_KPC * w_KPC
 
     # Synchrotron calculations
     p = 2 * alpha + 1
-    V = (4 / 3) * math.pi * l_cm * b_cm * w_cm * 0.125
+    V = (4 / 3) * math.pi * l_cm * b_cm * w_cm
     L1 = 4 * math.pi * D_l_cm**2 * s_v0_cgs * v0_hz**alpha
 
     T3 = (g2 - 1)**(2 - p) - (g1 - 1)**(2 - p)
