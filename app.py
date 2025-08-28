@@ -13,6 +13,7 @@ M_E = 9.1093837139e-28        # electron mass (g)
 C_LIGHT = 2.99792458e10       # speed of light (cm/s)
 X_FACTOR = 0.0                # proton/electron energy ratio
 
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def run_cosmology_calculator(z, H0, WM, WV):
     """Calculate cosmological distances from redshift"""
     h = H0 / 100
@@ -63,64 +64,112 @@ def run_cosmology_calculator(z, H0, WM, WV):
         'DA_Mpc': DA_Mpc,       # Angular diameter distance (Mpc)
         'kpc_DA': kpc_DA        # Scale factor (kpc/arcsec)
     }
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Insert this after your constants and run_cosmology_calculator
+def compute_fields_single_source(line: str, H0=69.6, WM=0.286, WV=0.714):
+    """
+    Parse one-line input and compute the same outputs as the batch routine.
+    Input line format (any of: comma / tab / space separated):
+    Source alpha gamma1 gamma2 v0 s_v0 l b w z
 
-def compute_fields_single_mode(alpha, g1, g2, v0, s_v0, l, b, w, z, H0=69.6, WM=0.286, WV=0.714):
+    Returns (header, row) both as tab-separated strings.
+    """
+    # --- Parse input robustly ---
+    if not isinstance(line, str):
+        raise ValueError("Input must be a single string line.")
+
+    # normalize commas/tabs to spaces then split on whitespace
+    parts = line.strip().replace(",", " ").replace("\t", " ").split()
+    if len(parts) != 10:
+        raise ValueError("Input must have exactly 10 fields: Source alpha gamma1 gamma2 v0 s_v0 l b w z")
+
+    source = parts[0]
+    try:
+        alpha, g1, g2, v0, s_v0, l, b, w, z = map(float, parts[1:])
+    except Exception as e:
+        raise ValueError(f"Failed converting numeric fields: {e}")
+
+    # --- Cosmology (reuse your function) ---
     cosmo = run_cosmology_calculator(z, H0, WM, WV)
-    D_l = cosmo['DL_Mpc']
-    D_a = cosmo['DA_Mpc']
-    Sf = cosmo['kpc_DA']
+    D_l = cosmo['DL_Mpc']       # Luminosity distance (Mpc)
+    D_a = cosmo['DA_Mpc']       # Angular diameter distance (Mpc)
+    Sf = cosmo['kpc_DA']        # Scale factor (kpc/arcsec)
 
-    # Conversions (same as multi mode)
-    l_cm = (l/2) * Sf * CGS_KPC
-    b_cm = (b/2) * Sf * CGS_KPC
-    w_cm = (w/2) * Sf * CGS_KPC
+    # --- Conversions ---
+    # angular semi-axes -> physical (kpc then cm)
+    l_KPC = (l / 2.0) * Sf
+    b_KPC = (b / 2.0) * Sf
+    w_KPC = (w / 2.0) * Sf
+    V_KPC3 = (4.0 / 3.0) * math.pi * l_KPC * b_KPC * w_KPC
+
+    l_cm = l_KPC * CGS_KPC
+    b_cm = b_KPC * CGS_KPC
+    w_cm = w_KPC * CGS_KPC
+    V_cm3 = (4.0 / 3.0) * math.pi * l_cm * b_cm * w_cm
     D_l_cm = D_l * CGS_MPC
+
+    # frequency and flux conversions
     v0_hz = v0 * 1e6
     s_v0_cgs = s_v0 * 1e-23
 
-    l_KPC, b_KPC, w_KPC = (l/2)*Sf, (b/2)*Sf, (w/2)*Sf
-    V_KPC3 = (4/3) * math.pi * l_KPC * b_KPC * w_KPC
-    V = (4/3) * math.pi * l_cm * b_cm * w_cm
+    # --- Synchrotron / equipartition math (same as batch) ---
+    p = 2.0 * alpha + 1.0
+    L1 = 4.0 * math.pi * D_l_cm**2 * s_v0_cgs * v0_hz**alpha
 
-    # Physics
-    p = 2 * alpha + 1
-    L1 = 4 * math.pi * D_l_cm**2 * s_v0_cgs * v0_hz**alpha
+    # Guard against problematic exponents or divisions (basic)
+    try:
+        T3 = (g2 - 1.0)**(2.0 - p) - (g1 - 1.0)**(2.0 - p)
+        T4 = (g2 - 1.0)**(2.0 * (1.0 - alpha)) - (g1 - 1.0)**(2.0 * (1.0 - alpha))
+        T5 = (g2 - 1.0)**(3.0 - p) - (g1 - 1.0)**(3.0 - p)
+        T6 = T3 * T4 / T5
 
-    T3 = (g2 - 1)**(2 - p) - (g1 - 1)**(2 - p)
-    T4 = (g2 - 1)**(2 * (1 - alpha)) - (g1 - 1)**(2 * (1 - alpha))
-    T5 = (g2 - 1)**(3 - p) - (g1 - 1)**(3 - p)
-    T6 = T3 * T4 / T5
+        T1 = 3.0 * L1 / (2.0 * C3 * (M_E * C_LIGHT**2)**(2.0 * alpha - 1.0))
+        T2 = (1.0 + X_FACTOR) / (1.0 - alpha) * (3.0 - p) / (2.0 - p) * (math.sqrt(2.0/3.0) * C1)**(1.0 - alpha)
+        A = T1 * T2 * T6
 
-    T1 = 3 * L1 / (2 * C3 * (M_E * C_LIGHT**2)**(2 * alpha - 1))
-    T2 = (1 + X_FACTOR) / (1 - alpha) * (3 - p) / (2 - p) * (math.sqrt(2/3) * C1)**(1 - alpha)
-    A = T1 * T2 * T6
-    L = L1 / (1 - alpha) * (math.sqrt(2/3) * C1 * (M_E * C_LIGHT**2)**2)**(1 - alpha) * T4
+        #  luminosity L (same expression as batch)
+        #L = L1 / (1.0 - alpha) * (math.sqrt(2.0/3.0) * C1 * (M_E * C_LIGHT**2)**2)**(1.0 - alpha) * T4
+        L = L1 / (1 - alpha) * (math.sqrt(2/3) * C1 * (M_E * C_LIGHT**2)**2)**(1 - alpha) * T4
+        B_min = ((4.0 * math.pi * (1.0 + alpha) * A) / V_cm3)**(1.0 / (3.0 + alpha))
+        B_eq = (2.0 / (1.0 + alpha))**(1.0 / (3.0 + alpha)) * B_min
 
-    B_min = ((4 * math.pi * (1 + alpha) * A) / V)**(1 / (3 + alpha))
-    B_eq = (2 / (1 + alpha))**(1 / (3 + alpha)) * B_min
+        u_b = B_min**2 / (8.0 * math.pi)
+        u_p = A / V_cm3 * B_min**(-1.0 + alpha)
+        u_tot = u_p + u_b
 
-    u_b = B_min**2 / (8 * math.pi)
-    u_p = A / V * B_min**(-1 + alpha)
-    u_tot = u_p + u_b
+    except Exception as e:
+        raise RuntimeError(f"Error during physics calculation: {e}")
 
-    return {
-        "Redshift (z)": round(z, 8),
-        "Spectral Index (α)": alpha,
-        "B_min (µG)": round(B_min*1e6, 8),
-        "B_eq (µG)": round(B_eq*1e6, 8),
-        "D_L (Mpc)": round(D_l, 8),
-        "D_A (Mpc)": round(D_a, 8),
-        "Scale (kpc/\")": round(Sf, 8),
-        "Length (kpc)": round(l_KPC, 8),
-        "Breadth (kpc)": round(b_KPC, 8),
-        "Width (kpc)": round(w_KPC, 8),
-        "Volume (kpc³)": f"{V_KPC3:.8e}",
-        "L (erg/s)": f"{L:.8e}",
-        "u_p (erg/cm³)": f"{u_p:.8e}",
-        "u_B (erg/cm³)": f"{u_b:.8e}",
-        "u_total (erg/cm³)": f"{u_tot:.8e}"
-    }
+    # --- Format header and one-line output (tab-separated) ---
+    header = (
+        "Source\tRedshift (z)\tSpectral Index (α)\tB_min (μG)\tB_eq (μG)"
+        "\tD_L (Mpc)\tD_A (Mpc)\tScale (kpc/\")\tLength (kpc)\tBreadth (kpc)"
+        "\tWidth (kpc)\tVolume (kpc³)\tL (erg/s)\tu_p (erg/cm³)\tu_B (erg/cm³)\tu_total (erg/cm³)"
+    )
 
+    # choose numeric formatting: 8 decimal places for reasonable numbers, scientific for very large/small
+    row = (
+        f"{source}\t"
+        f"{z:.8f}\t"
+        f"{alpha:.8f}\t"
+        f"{(B_min*1e6):.8f}\t"         # µG
+        f"{(B_eq*1e6):.8f}\t"          # µG
+        f"{D_l:.8f}\t"
+        f"{D_a:.8f}\t"
+        f"{Sf:.8f}\t"
+        f"{l_KPC:.8f}\t"
+        f"{b_KPC:.8f}\t"
+        f"{w_KPC:.8f}\t"
+        f"{V_KPC3:.8e}\t"              # use scientific for volumes
+        f"{L:.8e}\t"
+        f"{u_p:.8e}\t"
+        f"{u_b:.8e}\t"
+        f"{u_tot:.8e}"
+    )
+
+    return header, row
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def compute_fields_multi_mode(alpha, g1, g2, v0, s_v0, l, b, w, z, H0=69.6, WM=0.286, WV=0.714):
     """Calculate magnetic fields using redshift instead of direct distances"""
     # Get cosmology-derived values
@@ -167,9 +216,10 @@ def compute_fields_multi_mode(alpha, g1, g2, v0, s_v0, l, b, w, z, H0=69.6, WM=0
     u_tot = u_p + u_b
 
     return alpha, B_min * 1e6, B_eq * 1e6, D_l_cm, L, u_p, u_b, u_tot, D_l, D_a, Sf, z, l_KPC, b_KPC, w_KPC, V_KPC3
-# -----------------------
+
+# --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Streamlit App Layout
-# -----------------------
+# --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 st.set_page_config(
     page_title="Lobe Magnetic Field Estimator v2 ",
     page_icon="🌌",  
@@ -189,21 +239,34 @@ with st.sidebar:
 mode = st.radio("Select Mode", ["Single Source", "Batch (CSV Upload)"])
 
 if mode == "Single Source":
-    st.subheader("Single Source Input")
+    st.subheader("Single Source (paste one row)")
+    paste = st.text_area(
+        "Paste one row (Source alpha gamma1 gamma2 v0 s_v0 l b w z). "
+        "Separator can be tab, comma or spaces.",
+        height=80
+    )
 
-    alpha = st.number_input("Spectral Index (α)", value=0.7)
-    g1 = st.number_input("γ1", value=10.0)
-    g2 = st.number_input("γ2", value=10000.0)
-    v0 = st.number_input("ν₀ (MHz)", value=1400.0)
-    s_v0 = st.number_input("S(ν₀) (Jy)", value=1.0)
-    l = st.number_input("Length (arcsec)", value=100.0)
-    b = st.number_input("Breadth (arcsec)", value=50.0)
-    w = st.number_input("Width (arcsec)", value=50.0)
-    z = st.number_input("Redshift (z)", value=0.05)
+    if st.button("Compute single source"):
+        try:
+            hdr, row = compute_fields_single_source(paste, H0=H0, WM=WM, WV=WV)
+            # show as raw strings for easy copy-paste
+            st.code(hdr, language=None)
+            st.code(row, language=None)
 
-    if st.button("Compute"):
-        result = compute_fields_single_mode(alpha, g1, g2, v0, s_v0, l, b, w, z, H0, WM, WV)
-        st.json(result)  # or st.table(pd.DataFrame([result]))
+            # optional: pretty dataframe
+            import io
+            df_single = pd.read_csv(
+                io.StringIO(hdr.replace("\t", ",") + "\n" + row.replace("\t", ","))
+            )
+            st.dataframe(df_single)
+
+        except Exception as e:
+            st.error(str(e))
+
+elif mode == "Batch (CSV Upload)":
+    # your existing CSV upload + batch processing logic
+    ...
+
 
 st.markdown(
     """
