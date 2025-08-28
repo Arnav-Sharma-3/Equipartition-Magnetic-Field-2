@@ -84,7 +84,7 @@ def compute_fields(alpha, g1, g2, v0, s_v0, l, b, w, z, H0=69.6, WM=0.286, WV=0.
     l_KPC = (l/2) * Sf
     b_KPC = (b/2) * Sf 
     w_KPC = (w/2) * Sf 
-    V = (4 / 3) * math.pi * l_KPC * b_KPC * w_KPC
+    V_KPC3 = (4 / 3) * math.pi * l_KPC * b_KPC * w_KPC
 
     # Synchrotron calculations
     p = 2 * alpha + 1
@@ -108,7 +108,7 @@ def compute_fields(alpha, g1, g2, v0, s_v0, l, b, w, z, H0=69.6, WM=0.286, WV=0.
     u_p = A / V * B_min**(-1 + alpha)
     u_tot = u_p + u_b
 
-    return alpha, B_min * 1e6, B_eq * 1e6, D_l_cm, L, u_p, u_b, u_tot, D_l, D_a, Sf, z
+    return alpha, B_min * 1e6, B_eq * 1e6, D_l_cm, L, u_p, u_b, u_tot, D_l, D_a, Sf, z, l_KPC, b_KPC, w_KPC, V_kpc3
 # -----------------------
 # Streamlit App Layout
 # -----------------------
@@ -180,6 +180,10 @@ if uploaded_file:
                     "D_L (Mpc)": results[8].round(3),
                     "D_A (Mpc)": results[9].round(3),
                     "Scale (kpc/\")": results[10].round(3),
+                    "Length (kpc)": results[12].round(3),
+                    "Breadth (kpc)": results[13].round(3),
+                    "Width (kpc)": results[14].round(3),
+                    "Volume (kpc³)": results[15].apply(lambda x: f"{x:.2e}"),
                     "L (erg/s)": results[4].apply(lambda x: f"{x:.2e}"),
                     "u_p (erg/cm³)": results[5].apply(lambda x: f"{x:.2e}"),
                     "u_B (erg/cm³)": results[6].apply(lambda x: f"{x:.2e}"),
