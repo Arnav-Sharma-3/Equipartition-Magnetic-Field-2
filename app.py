@@ -108,7 +108,7 @@ def compute_fields(alpha, g1, g2, v0, s_v0, l, b, w, z, H0=69.6, WM=0.286, WV=0.
     u_p = A / V * B_min**(-1 + alpha)
     u_tot = u_p + u_b
 
-    return alpha, B_min * 1e6, B_eq * 1e6, D_l_cm, L, u_p, u_b, u_tot, D_l, D_a, Sf, z, l_KPC, b_KPC, w_KPC, V_kpc3
+    return alpha, B_min * 1e6, B_eq * 1e6, D_l_cm, L, u_p, u_b, u_tot, D_l, D_a, Sf, z, l_KPC, b_KPC, w_KPC, V_KPC3
 # -----------------------
 # Streamlit App Layout
 # -----------------------
