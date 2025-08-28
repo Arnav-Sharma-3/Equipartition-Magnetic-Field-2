@@ -236,9 +236,12 @@ with st.sidebar:
     #WM = st.slider("Ω Matter (Ωₘ)", 0.001, 1.500, 0.286, format="%.3f")
     #WV = st.slider("Ω Vacuum (Ω_Λ)", 0.001, 1.500, 0.714, format="%.3f")
 
-mode = st.radio("Select Mode", ["Single Source", "Batch (CSV Upload)"])
+# -------------------------------
+# TABS: Single Source  |  Batch
+# -------------------------------
+tab_single, tab_batch = st.tabs(["🔹 Single Source", "📂 Batch (CSV Upload)"])
 
-if mode == "Single Source":
+with tab_single:
     st.subheader("Single Source (paste one row)")
     paste = st.text_area(
         "Paste one row (Source alpha gamma1 gamma2 v0 s_v0 l b w z). "
@@ -263,83 +266,79 @@ if mode == "Single Source":
         except Exception as e:
             st.error(str(e))
 
-elif mode == "Batch (CSV Upload)":
-    # your existing CSV upload + batch processing logic
-    ...
+with tab_batch:
+    st.markdown(
+        """
+        Upload a CSV/TSV with columns:  
+        `Source, alpha, gamma1, gamma2, nu0, s_nu0, l, b, w, z`  
+        — where **l, b, w** are in **arc second**, **z** is redshift, **nu0** in **MHz**, **s_nu0** in **Jy**.
+        """
+    )
 
-
-st.markdown(
-    """
-    Upload a CSV/TSV with columns:  
-    `Source, alpha, gamma1, gamma2, nu0, s_nu0, l, b, w, z`  
-    — where **l, b, w** are in **arc second**, **z** is redshift, **nu0** in **MHz**, **s_nu0** in **Jy**.
-    """
-)
-
-uploaded_file = st.file_uploader("Upload your data file", type=["csv", "tsv", "txt"])
-if uploaded_file:
-    sep = "\t" if uploaded_file.name.endswith((".tsv", ".txt")) else ","
-    try:
-        df = pd.read_csv(uploaded_file, sep=sep, comment="#")
-    except Exception as e:
-        st.error(f"📂 Could not read file: {e}")
-    else:
-        required = ["Source","alpha","gamma1","gamma2","v0","s_v0","l","b","w","z"]
-        missing = [c for c in required if c not in df.columns]
-        if missing:
-            st.error(f"❌ Missing columns: {', '.join(missing)}")
+    uploaded_file = st.file_uploader("Upload your data file", type=["csv", "tsv", "txt"])
+    if uploaded_file:
+        sep = "\t" if uploaded_file.name.endswith((".tsv", ".txt")) else ","
+        try:
+            df = pd.read_csv(uploaded_file, sep=sep, comment="#")
+        except Exception as e:
+            st.error(f"📂 Could not read file: {e}")
         else:
-            # Data cleaning
-            numeric_cols = ["alpha", "gamma1", "gamma2", "v0", "s_v0", "l", "b", "w", "z"]
-            df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
-            
-            if df[numeric_cols].isna().any().any():
-                invalid_rows = df[df[numeric_cols].isna().any(axis=1)]
-                st.warning(f"⚠️ {len(invalid_rows)} rows contain invalid numeric values and will be skipped")
-                st.dataframe(invalid_rows)
-                df = df.dropna(subset=numeric_cols)
-            
-            if df.empty:
-                st.error("❌ No valid data remaining after cleaning. Please check your input file.")
+            required = ["Source","alpha","gamma1","gamma2","v0","s_v0","l","b","w","z"]
+            missing = [c for c in required if c not in df.columns]
+            if missing:
+                st.error(f"❌ Missing columns: {', '.join(missing)}")
             else:
-                results = df.apply(
-                    lambda r: compute_fields_multi_mode(
-                        r["alpha"], r["gamma1"], r["gamma2"],
-                        r["v0"], r["s_v0"],
-                        r["l"], r["b"], r["w"],
-                        r["z"], H0, WM, WV
-                    ), axis=1, result_type="expand"
-                )
+                # Data cleaning
+                numeric_cols = ["alpha", "gamma1", "gamma2", "v0", "s_v0", "l", "b", "w", "z"]
+                df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
                 
-                df_out = pd.DataFrame({
-                    "Source": df["Source"],
-                    "Redshift (z)": results[11].round(8),
-                    "Spectral Index (α)": results[0],
-                    "B_min (μG)": results[1].round(8),
-                    "B_eq (μG)": results[2].round(8),
-                    "D_L (Mpc)": results[8].round(8),
-                    "D_A (Mpc)": results[9].round(8),
-                    "Scale (kpc/\")": results[10].round(8),
-                    "Length (kpc)": results[12].round(8),
-                    "Breadth (kpc)": results[13].round(8),
-                    "Width (kpc)": results[14].round(8),
-                    "Volume (kpc³)": results[15].apply(lambda x: f"{x:.8e}"),
-                    "L (erg/s)": results[4].apply(lambda x: f"{x:.8e}"),
-                    "u_p (erg/cm³)": results[5].apply(lambda x: f"{x:.8e}"),
-                    "u_B (erg/cm³)": results[6].apply(lambda x: f"{x:.8e}"),
-                    "u_total (erg/cm³)": results[7].apply(lambda x: f"{x:.8e}")
-                })
+                if df[numeric_cols].isna().any().any():
+                    invalid_rows = df[df[numeric_cols].isna().any(axis=1)]
+                    st.warning(f"⚠️ {len(invalid_rows)} rows contain invalid numeric values and will be skipped")
+                    st.dataframe(invalid_rows)
+                    df = df.dropna(subset=numeric_cols)
+                
+                if df.empty:
+                    st.error("❌ No valid data remaining after cleaning. Please check your input file.")
+                else:
+                    results = df.apply(
+                        lambda r: compute_fields_multi_mode(
+                            r["alpha"], r["gamma1"], r["gamma2"],
+                            r["v0"], r["s_v0"],
+                            r["l"], r["b"], r["w"],
+                            r["z"], H0, WM, WV
+                        ), axis=1, result_type="expand"
+                    )
+                    
+                    df_out = pd.DataFrame({
+                        "Source": df["Source"],
+                        "Redshift (z)": results[11].round(8),
+                        "Spectral Index (α)": results[0],
+                        "B_min (μG)": results[1].round(8),
+                        "B_eq (μG)": results[2].round(8),
+                        "D_L (Mpc)": results[8].round(8),
+                        "D_A (Mpc)": results[9].round(8),
+                        "Scale (kpc/\")": results[10].round(8),
+                        "Length (kpc)": results[12].round(8),
+                        "Breadth (kpc)": results[13].round(8),
+                        "Width (kpc)": results[14].round(8),
+                        "Volume (kpc³)": results[15].apply(lambda x: f"{x:.8e}"),
+                        "L (erg/s)": results[4].apply(lambda x: f"{x:.8e}"),
+                        "u_p (erg/cm³)": results[5].apply(lambda x: f"{x:.8e}"),
+                        "u_B (erg/cm³)": results[6].apply(lambda x: f"{x:.8e}"),
+                        "u_total (erg/cm³)": results[7].apply(lambda x: f"{x:.8e}")
+                    })
 
-                st.success("✅ Calculation complete!")
-                st.dataframe(df_out)
+                    st.success("✅ Calculation complete!")
+                    st.dataframe(df_out)
 
-                csv_data = df_out.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    label="📅 Download Results (CSV)",
-                    data=csv_data,
-                    file_name="magnetic_fields_results.csv",
-                    mime="text/csv"
-                )
+                    csv_data = df_out.to_csv(index=False).encode("utf-8")
+                    st.download_button(
+                        label="📅 Download Results (CSV)",
+                        data=csv_data,
+                        file_name="magnetic_fields_results.csv",
+                        mime="text/csv"
+                    )
 st.markdown("---")
 st.markdown(
     "📌 The cosmology calculator used for this project is based on [James Schombert's python version of the Ned Wright's Cosmology Calculator](https://www.astro.ucla.edu/~wright/CC.python).",
