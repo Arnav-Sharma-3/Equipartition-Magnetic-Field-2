@@ -183,11 +183,11 @@ if uploaded_file:
                     "Length (kpc)": results[12].round(8),
                     "Breadth (kpc)": results[13].round(8),
                     "Width (kpc)": results[14].round(8),
-                    "Volume (kpc³)": results[15].apply(lambda x: f"{x:.2e}"),
-                    "L (erg/s)": results[4].apply(lambda x: f"{x:.2e}"),
-                    "u_p (erg/cm³)": results[5].apply(lambda x: f"{x:.2e}"),
-                    "u_B (erg/cm³)": results[6].apply(lambda x: f"{x:.2e}"),
-                    "u_total (erg/cm³)": results[7].apply(lambda x: f"{x:.2e}")
+                    "Volume (kpc³)": results[15].apply(lambda x: f"{x:.8e}"),
+                    "L (erg/s)": results[4].apply(lambda x: f"{x:.8e}"),
+                    "u_p (erg/cm³)": results[5].apply(lambda x: f"{x:.8e}"),
+                    "u_B (erg/cm³)": results[6].apply(lambda x: f"{x:.8e}"),
+                    "u_total (erg/cm³)": results[7].apply(lambda x: f"{x:.8e}")
                 })
 
                 st.success("✅ Calculation complete!")
