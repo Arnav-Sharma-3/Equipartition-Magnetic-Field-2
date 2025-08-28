@@ -118,8 +118,8 @@ st.title("🌀 Lobe Magnetic Field Estimator v2 (Cosmology Calculator Integrated
 with st.sidebar:
     st.header("Cosmology Parameters")
     H0 = st.number_input("Hubble Constant (H₀)", value=69.6)
-    WM = st.number_input("Ω Matter (Ωₘ)", value=0.28600, format="%.5f)
-    WV = st.number_input("Ω Vacuum (Ω_Λ)", value=0.71400, format="%.5f)
+    WM = st.number_input("Ω Matter (Ωₘ)", value=0.28600, format="%.5f")
+    WV = st.number_input("Ω Vacuum (Ω_Λ)", value=0.71400, format="%.5f")
     #WM = st.slider("Ω Matter (Ωₘ)", 0.001, 1.500, 0.286, format="%.3f")
     #WV = st.slider("Ω Vacuum (Ω_Λ)", 0.001, 1.500, 0.714, format="%.3f")
 
