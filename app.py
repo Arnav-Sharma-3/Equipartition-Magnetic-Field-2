@@ -161,7 +161,7 @@ def compute_fields_single_source(line: str, H0=69.6, WM=0.286, WV=0.714):
         f"{b_KPC:.8f}\t"
         f"{w_KPC:.8f}\t"
         f"{float(V_KPC3):.8f}\t"
-        f"{float(L):.f}\t"
+        f"{float(L):.8f}\t"
         f"{float(u_p):.8f}\t"
         f"{float(u_b):.8f}\t"
         f"{float(u_tot):.8f}"
