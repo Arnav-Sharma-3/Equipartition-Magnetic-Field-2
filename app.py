@@ -160,11 +160,11 @@ def compute_fields_single_source(line: str, H0=69.6, WM=0.286, WV=0.714):
         f"{l_KPC:.8f}\t"
         f"{b_KPC:.8f}\t"
         f"{w_KPC:.8f}\t"
-        f"{float(V_KPC3):.8e}\t"
-        f"{float(L):.8e}\t"
-        f"{float(u_p):.8e}\t"
-        f"{float(u_b):.8e}\t"
-        f"{float(u_tot):.8e}"
+        f"{format(V_KPC3, '.8e')}\t"     # ALWAYS scientific
+        f"{format(L, '.8e')}\t"
+        f"{format(u_p, '.8e')}\t"
+        f"{format(u_b, '.8e')}\t"
+        f"{format(u_tot, '.8e')}"
     )
 
     return header, row
