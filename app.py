@@ -258,10 +258,26 @@ with tab_single:
 
             # optional: pretty dataframe
             import io
-            df_single = pd.read_csv(
-                io.StringIO(hdr.replace("\t", ",") + "\n" + row.replace("\t", ","))
-            )
-            st.dataframe(df_single)
+            import io
+df_single = pd.read_csv(io.StringIO(hdr.replace("\t", ",") + "\n" + row.replace("\t", ",")))
+
+# columns we want in scientific notation (must match header exactly)
+sci_cols = [
+    "Volume (kpc³)",
+    "L (erg/s)",
+    "u_p (erg/cm³)",
+    "u_B (erg/cm³)",
+    "u_total (erg/cm³)",
+]
+
+# For each requested column, convert to float then format as scientific string
+for col in sci_cols:
+    if col in df_single.columns:
+        # defensively convert to float then format - handles both numeric or string input
+        df_single[col] = df_single[col].apply(lambda x: f"{float(x):.8e}")
+
+# show nicely — these columns will now display with 'e' notation
+st.dataframe(df_single)
 
         except Exception as e:
             st.error(str(e))
