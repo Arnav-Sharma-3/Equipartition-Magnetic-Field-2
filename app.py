@@ -97,9 +97,14 @@ def compute_fields_single_source(line: str, H0=69.6, WM=0.286, WV=0.714):
 
     # --- Conversions ---
     # angular semi-axes -> physical (kpc then cm)
-    l_KPC = (l / 2.0) * Sf
-    b_KPC = (b / 2.0) * Sf
-    w_KPC = (w / 2.0) * Sf
+    #l_KPC = (l / 2.0) * Sf
+    #b_KPC = (b / 2.0) * Sf
+    #w_KPC = (w / 2.0) * Sf
+
+    l_KPC = (l) * Sf
+    b_KPC = (b) * Sf
+    w_KPC = (w) * Sf
+    
     V_KPC3 = (4.0 / 3.0) * math.pi * l_KPC * b_KPC * w_KPC
 
     l_cm = l_KPC * CGS_KPC
