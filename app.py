@@ -210,7 +210,7 @@ def compute_fields_multi_mode(alpha, g1, g2, v0, s_v0, l, b, w, z, H0=69.6, WM=0
 
     # Synchrotron calculations
     p = 2 * alpha + 1
-    V = (4 / 3) * math.pi * l_cm * b_cm * w_cm
+    V_cm3 = (4 / 3) * math.pi * l_cm * b_cm * w_cm
     L1 = 4 * math.pi * D_l_cm**2 * s_v0_cgs * v0_hz**alpha
 
     T3 = (g2 - 1)**(2 - p) - (g1 - 1)**(2 - p)
@@ -223,7 +223,7 @@ def compute_fields_multi_mode(alpha, g1, g2, v0, s_v0, l, b, w, z, H0=69.6, WM=0
     A = T1 * T2 * T6
     L = L1 / (1 - alpha) * (math.sqrt(2/3) * C1 * (M_E * C_LIGHT**2)**2)**(1 - alpha) * T4
 
-    B_min = ((4 * math.pi * (1 + alpha) * A) / V)**(1 / (3 + alpha))
+    B_min = ((4 * math.pi * (1 + alpha) * A) / V_cm3)**(1 / (3 + alpha))
     B_eq = (2 / (1 + alpha))**(1 / (3 + alpha)) * B_min
 
     u_b = B_eq**2 / (8 * math.pi)
