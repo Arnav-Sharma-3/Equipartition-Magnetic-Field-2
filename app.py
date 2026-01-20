@@ -139,7 +139,7 @@ def compute_fields_single_source(line: str, H0=69.6, WM=0.286, WV=0.714):
         B_eq = (2.0 / (1.0 + alpha))**(1.0 / (3.0 + alpha)) * B_min
 
         u_b = B_min**2 / (8.0 * math.pi)
-        u_p = (alpha*A*L*B_eq**(-3/2))/V
+        u_p = (alpha*A*L*B_eq**(-3/2))/V_cm3
         u_tot = u_p + u_b
 
     except Exception as e:
@@ -227,7 +227,7 @@ def compute_fields_multi_mode(alpha, g1, g2, v0, s_v0, l, b, w, z, H0=69.6, WM=0
     B_eq = (2 / (1 + alpha))**(1 / (3 + alpha)) * B_min
 
     u_b = B_eq**2 / (8 * math.pi)
-    u_p = (alpha*A*L*B_eq**(-3/2))/V
+    u_p = (alpha*A*L*B_eq**(-3/2))/V_cm3
     u_tot = u_p + u_b
 
     return alpha, B_min * 1e6, B_eq * 1e6, D_l_cm, L, u_p, u_b, u_tot, D_l, D_a, Sf, z, l_KPC, b_KPC, w_KPC, V_KPC3
