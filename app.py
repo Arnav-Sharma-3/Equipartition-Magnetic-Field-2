@@ -138,7 +138,7 @@ def compute_fields_single_source(line: str, H0=69.6, WM=0.286, WV=0.714):
         B_min = ((4.0 * math.pi * (1.0 + alpha) * A) / V_cm3)**(1.0 / (3.0 + alpha))
         B_eq = (2.0 / (1.0 + alpha))**(1.0 / (3.0 + alpha)) * B_min
 
-        u_b = B_min**2 / (8.0 * math.pi)
+        u_b = B_eq**2 / (8.0 * math.pi)
         u_p = (alpha*A*L*B_eq**(-3/2))/V_cm3
         u_tot = u_p + u_b
 
